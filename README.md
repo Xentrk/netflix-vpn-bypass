@@ -24,3 +24,14 @@ Installation of entware package jq.  jq is a json file parser.  To install, ente
 
 Support available on snbforums.com 
 https://www.snbforums.com/threads/selective-routing-for-netflix.42661/
+
+Installation:
+
+    /usr/sbin/curl --retry 3 "https://raw.githubusercontent.com/Xentrk/netflix-vpn-bypass/master/IPSET_Netflix.sh" -o /jffs/scripts/IPSET_Netflix.sh
+
+IPv6 addresses are excluded in this version.
+
+
+
+
+
