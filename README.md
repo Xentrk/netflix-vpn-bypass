@@ -1,7 +1,7 @@
 # netflix-vpn-bypass
 Bypass the OpenVPN Client and selectively route Netflix traffic to the WAN interface on AsusWRT-Merlin firmware
 
-Since January 2016, Netflix blocks known VPN servers. The purpose of this script is to bypass the OpenVPN Client and route Netflix traffic to the WAN interface.  Netflix hosts on Amazon AWS servers.  Because of this, the script will also route Amazon AWS traffic, including Amazon and Amazon Prime, to the WAN interface.  
+Since January 2016, Netflix blocks known VPN servers.  The purpose of the IPSET_Netflix.sh script is to bypass the OpenVPN Client and route Netflix traffic to the WAN interface.  Netflix hosts on Amazon AWS servers.  Because of this, the script will also route Amazon AWS traffic, including Amazon and Amazon Prime, to the WAN interface.n and Amazon Prime, to the WAN interface.  
 
 Autonomous System Numbers (ASNs) are assigned to entities such as Internet Service Providers and other large organizations that control blocks of IP addresses. The ASN for Netflix is AS2906.  Amazon AWS supplies the list of IPv4 addresses in the json file at 
 https://ip-ranges.amazonaws.com/ip-ranges.json
