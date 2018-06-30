@@ -29,7 +29,6 @@ Installation:
 
     /usr/sbin/curl --retry 3 "https://raw.githubusercontent.com/Xentrk/netflix-vpn-bypass/master/IPSET_Netflix.sh" -o /jffs/scripts/IPSET_Netflix.sh
 
-IPv6 addresses are excluded in this version.
 
 
 
