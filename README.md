@@ -20,7 +20,7 @@ IPv6 addresses are excluded in this version.
 
 Installation of entware package jq.  jq is a json file parser.  To install, enter the command "opkg install jq" on the command line.
 
-##### Installation
+#### Installation
 
     /usr/sbin/curl --retry 3 "https://raw.githubusercontent.com/Xentrk/netflix-vpn-bypass/master/IPSET_Netflix.sh" -o /jffs/scripts/IPSET_Netflix.sh
 
