@@ -2,7 +2,7 @@
 ####################################################################################################
 # Script: IPSET_Netflix.sh
 # Author: Xentrk
-# 30-June-2018 Version 3.4
+# 30-June-2018 Version 3.5
 # Collaborators: @Martineau, @thelonelycoder, @Adamm
 #
 # Thank you to @Martineau on snbforums.com for educating myself and others on Selective
@@ -94,7 +94,12 @@ if [ ! -s "/jffs/shared-SelectiveRouting-whitelist" ];then
   echo "ipinfo.io" > /jffs/shared-SelectiveRouting-whitelist
 fi
 
+# Create NETFLIX ipset list
+
+list=`ipset list -n NETFLIX` >/dev/null 2>&1
+if [ "$list" != "NETFLIX" ]; then
 ipset create NETFLIX hash:net family inet hashsize 1024 maxelem 65536
+fi
 
 #Pull all IPv4s listed for Netflix USA - AS2906
 curl https://ipinfo.io/AS2906 2>/dev/null | grep -E "a href.*2906\/" | grep -v ":" | sed 's/^.*<a href="\/AS2906\///; s/" >//' > /opt/tmp/AS2906
@@ -157,8 +162,14 @@ Chk_Entware 'jq' || { echo -e "\a***ERROR*** Entware" $ENTWARE_UTILITY  "not ava
 # Download Amazon AWS json file
 wget https://ip-ranges.amazonaws.com/ip-ranges.json -O /opt/tmp/ip-ranges.json
 
-# Create IPSET lists
+
+# Create AMAZONAWS ipset list
+
+list=`ipset list -n AMAZONAWS` >/dev/null 2>&1
+if [ "$list" != "AMAZONAWS" ]; then
+# ipset AMAZONAWS does not exist
 ipset create AMAZONAWS hash:net family inet hashsize 1024 maxelem 65536
+fi
 
 #Pull all IPv4s listed for Amazon AWS
 
