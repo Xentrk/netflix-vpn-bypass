@@ -54,7 +54,7 @@
 logger -t "($(basename $0))" $$ Starting IPSET_Netflix.sh..." $0${*:+ $*}."
 
 # Uncomment for debugging
-#set -x
+set -x
 
 # Prevent script from running concurrently when called from nat-start
 
@@ -97,12 +97,9 @@ fi
 ipset create NETFLIX hash:net family inet hashsize 1024 maxelem 65536
 
 #Pull all IPv4s listed for Netflix USA - AS2906
-netsv4=`curl http://ipinfo.io/AS2906 2>/dev/null | grep -E "a href.*2906\/" | grep -v ":" | sed 's/^.*<a href="\/AS2906\///; s/" >//'`
-for net in $netsv4
-do
-  ipset add NETFLIX $net
-done
-unset netsv4
+curl https://ipinfo.io/AS2906 2>/dev/null | grep -E "a href.*2906\/" | grep -v ":" | sed 's/^.*<a href="\/AS2906\///; s/" >//' > /opt/tmp/AS2906
+ipset flush NETFLIX 
+awk '{print "add NETFLIX " $1}' /opt/tmp/AS2906 | ipset restore -!
 
 # Prevent entware funcion jq from executing until entware has mounted 
 # Chk_Entware function provided by @Martineau
@@ -158,18 +155,16 @@ Chk_Entware () {
 Chk_Entware 'jq' || { echo -e "\a***ERROR*** Entware" $ENTWARE_UTILITY  "not available";exit 99; }
 
 # Download Amazon AWS json file
-wget https://ip-ranges.amazonaws.com/ip-ranges.json -O /jffs/scripts/ip-ranges.json
+wget https://ip-ranges.amazonaws.com/ip-ranges.json -O /opt/tmp/ip-ranges.json
 
 # Create IPSET lists
 ipset create AMAZONAWS hash:net family inet hashsize 1024 maxelem 65536
 
 #Pull all IPv4s listed for Amazon AWS
 
-for IPv4 in `jq -r '.prefixes | .[].ip_prefix' < /jffs/scripts/ip-ranges.json`
-do
-  ipset add AMAZONAWS $IPv4
-done
-unset IPv4
+jq -r '.prefixes | .[].ip_prefix' < /opt/tmp/ip-ranges.json > /opt/tmp/AmazonAWS
+ipset flush AMAZONAWS  
+awk '{print "add AMAZONAWS " $1}' /opt/tmp/AmazonAWS | ipset restore -!
 
 ###########################################################
 #Create table to contain items added automatically by wan #
