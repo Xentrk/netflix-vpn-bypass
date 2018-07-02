@@ -2,7 +2,7 @@
 ####################################################################################################
 # Script: IPSET_Netflix.sh
 # Author: Xentrk
-# 30-June-2018 Version 3.5
+# 2-July-2018 Version 3.5
 # Collaborators: @Martineau, @thelonelycoder, @Adamm
 #
 # Thank you to @Martineau on snbforums.com for educating myself and others on Selective
@@ -54,7 +54,7 @@
 logger -t "($(basename $0))" $$ Starting IPSET_Netflix.sh..." $0${*:+ $*}."
 
 # Uncomment for debugging
-set -x
+#set -x
 
 # Prevent script from running concurrently when called from nat-start
 
