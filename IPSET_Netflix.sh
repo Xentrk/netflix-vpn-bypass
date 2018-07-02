@@ -8,6 +8,8 @@
 # Thank you to @Martineau on snbforums.com for educating myself and others on Selective
 # Routing using Asuswrt-Merlin firmware.
 #
+# Support Thread: https://www.snbforums.com/threads/selective-routing-for-netflix.42661/
+#
 #####################################################################################################
 # Script Description:
 #
@@ -161,7 +163,6 @@ Chk_Entware 'jq' || { echo -e "\a***ERROR*** Entware" $ENTWARE_UTILITY  "not ava
 
 # Download Amazon AWS json file
 wget https://ip-ranges.amazonaws.com/ip-ranges.json -O /opt/tmp/ip-ranges.json
-
 
 # Create AMAZONAWS ipset list
 
