@@ -18,8 +18,8 @@ IPv6 addresses are excluded in this version.
 
 #### Requirements
 
-Installation of entware package jq.  jq is a json file parser.  To install, enter the command "opkg install jq" on the command line.
-ipset version 6. Support for ipset version 4.5 is planned for a future release 
+1. Installation of entware package jq.  jq is a json file parser.  To install, enter the command "opkg install jq" on the command line.
+2. ipset version 6. Support for ipset version 4.5 is planned for a future release 
 
 #### Installation
 
