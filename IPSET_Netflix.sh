@@ -2,31 +2,45 @@
 ####################################################################################################
 # Script: IPSET_Netflix.sh
 # Author: Xentrk
-# 2-July-2018 Version 3.5
+# 5-July-2018 Version 3.5
 # Collaborators: @Martineau, @thelonelycoder, @Adamm
 #
 # Thank you to @Martineau on snbforums.com for educating myself and others on Selective
-# Routing using Asuswrt-Merlin firmware.
+# Routing techniques using Asuswrt-Merlin firmware.
 #
 # Support Thread: https://www.snbforums.com/threads/selective-routing-for-netflix.42661/
 #
 #####################################################################################################
 # Script Description:
 #
-# The purpose of this script is for selective routing of Netflix traffic using
-# Autonomous System Numbers (ASNs). ASNs are assigned to entities such as Internet
-# Service Providers and other large organizations that control blocks of IP addresses.
+# Bypass the OpenVPN Client and selectively route Netflix traffic to the WAN interface on 
+# AsusWRT-Merlin firmware
 #
-# Netflix and other services that use Amazon AWS servers are blocking VPN's.
+# Since January 2016, Netflix blocks known VPN servers. The purpose of the IPSET_Netflix.sh
+# script is to bypass the OpenVPN Client for Netflix traffic and route it to the WAN interface. 
+# Netflix also hosts on Amazon AWS servers. Because of this, the script will also route Amazon AWS 
+# traffic, including Amazon and Amazon Prime traffic, to the WAN interface.
+#
+# Autonomous System Numbers (ASNs) are assigned to entities such as Internet Service Providers and 
+# other large organizations that control blocks of IP addresses. The ASN for Netflix is AS2906. 
+# Amazon AWS supplies the list of IPv4 addresses in the json file available at 
+# https://ip-ranges.amazonaws.com/ip-ranges.json
 #
 # This script will
-#   1. Create shared whitelist entry for ipinfo.io in /jffs/shared-SelectiveRouting-whitelist for use by AB-Solution and Skynet.
-#      Otherwise, ipinfo.io may be blocked and the script will not work.
-#    2. Obtain the IPv4 addresses used by Netflix and Amazon AWS USA from ipinfo.io.
-#      IPv6 addresses are excluded in this version.
-#   3. Create the IPSET list NETFLIX
-#   4. Add the IPv4 address to the IPSET list NETFLIX
-#   5. Route IPv4 addresses in IPSET list NETFLIX to WAN interface.
+#
+# 1) Create the IPSET lists NETFLIX and AMAZONAWS
+# 2) Obtain the IPv4 addresses used by Netflix using AS2906 from ipinfo.io.
+# 3) Add the Netflix IPv4 address to the IPSET list NETFLIX
+# 4) Parse the Amazon AWS json file using the jq entware package for IPv4 addresses used by Amazon
+# 5) Add the Amazon IPv4 address to the IPSET list AMAZONAWS
+# 6) Route IPv4 addresses in IPSET list NETFLIX and AMAZONAWS to WAN interface
+#
+# IPv6 addresses are excluded in this version.
+#
+# Requirements
+#
+#  1) Installation of entware package jq. jq is a json file parser. To install, enter the command "opkg install jq" on the command line. 
+#  2) ipset version 6. Support for ipset version 4.5 is planned for a future release
 #
 # Note 1: IPSET syntax differs between version 6 and 4.5
 #             Syntax for ipset v6
@@ -42,20 +56,18 @@
 #
 # Note 3: Troubleshooting
 #
-#            You can use these sites for AS validation and troubleshooting to lookup ASNs:
-#
-#               https://bgp.he.net/AS16509 (Click on the prefixes tab to view IP addresses)
-#               https://ipinfo.io/AS2906
+# You can use these sites for AS validation and troubleshooting to lookup ASNs:
+#  https://bgp.he.net/AS16509 - This is the ASN for Amazon USA (Click on the prefixes tab to view IP addresses)
+#  https://ipinfo.io/AS2906 - Netflix ASN
 # 
 # Note 4: Required OpenVPN Client Settings
 #
-#         - Redirect Internet Traffic = Policy Rules or Policy Rules (Strict)
-#         - Others?
-#
+#  - Redirect Internet Traffic = Policy Rules or Policy Rules (Strict)
+#  
 #######################################################################
-logger -t "($(basename $0))" $$ Starting IPSET_Netflix.sh..." $0${*:+ $*}."
+logger -t "($(basename $0))" $$ Starting Script Execution
 
-# Uncomment for debugging
+# Uncomment the line below for debugging
 #set -x
 
 # Prevent script from running concurrently when called from nat-start
@@ -92,7 +104,6 @@ main() {
 # to prevent ipinfo.io from being blocked by AB-Solution and Skynet
 
 if [ ! -s "/jffs/shared-SelectiveRouting-whitelist" ];then
-# create shared white list for ABS and Skynet"
   echo "ipinfo.io" > /jffs/shared-SelectiveRouting-whitelist
 fi
 
@@ -100,13 +111,32 @@ fi
 
 list=`ipset list -n NETFLIX` >/dev/null 2>&1
 if [ "$list" != "NETFLIX" ]; then
-ipset create NETFLIX hash:net family inet hashsize 1024 maxelem 65536
+    ipset create NETFLIX hash:net family inet hashsize 1024 maxelem 65536
 fi
 
-#Pull all IPv4s listed for Netflix USA - AS2906
-curl https://ipinfo.io/AS2906 2>/dev/null | grep -E "a href.*2906\/" | grep -v ":" | sed 's/^.*<a href="\/AS2906\///; s/" >//' > /opt/tmp/AS2906
-ipset flush NETFLIX 
-awk '{print "add NETFLIX " $1}' /opt/tmp/AS2906 | ipset restore -!
+#Download Netflix AS2906 IPv4 addresses
+
+download_AS2906 () {
+    curl https://ipinfo.io/AS2906 2>/dev/null | grep -E "a href.*2906\/" | grep -v ":" | sed 's/^.*<a href="\/AS2906\///; s/" >//' > /opt/tmp/AS2906
+}
+
+# if ipset list NETFLIX does not exist, create it
+
+if [ "`ipset list -n NETFLIX`" != "NETFLIX" ]; then
+    ipset create NETFLIX hash:net family inet hashsize 1024 maxelem 65536
+fi
+
+# if ipset list NETFLIX is empty or source file is older than 24 hours, download source file; load ipset list  
+
+if [ "`ipset -L NETFLIX 2>/dev/null | awk '{ if (FNR == 7) print $0 }' | awk '{print $4 }'`" -eq "0" ]; then
+    if [ ! -s /opt/tmp/AS2906 ]; then 
+        download_AS2906
+    fi
+    if [ "`find /opt/tmp/ -name AmazonAWS -mtime +1 -print`" = "/opt/tmp/AmazonAWS" ]; then
+        download_AS2906
+    fi
+awk '{print "add NETFLIX " $1}' /opt/tmp/AS2906 | ipset restore -!  
+fi
 
 # Prevent entware funcion jq from executing until entware has mounted 
 # Chk_Entware function provided by @Martineau
@@ -161,28 +191,39 @@ Chk_Entware () {
 
 Chk_Entware 'jq' || { echo -e "\a***ERROR*** Entware" $ENTWARE_UTILITY  "not available";exit 99; }
 
+
 # Download Amazon AWS json file
-wget https://ip-ranges.amazonaws.com/ip-ranges.json -O /opt/tmp/ip-ranges.json
 
-# Create AMAZONAWS ipset list
+download_AmazonAWS () {
+    wget https://ip-ranges.amazonaws.com/ip-ranges.json -O /opt/tmp/ip-ranges.json 
+    jq -r '.prefixes | .[].ip_prefix' < /opt/tmp/ip-ranges.json > /opt/tmp/AmazonAWS
+    rm -rf /opt/tmp/ip-ranges.json
+}
 
-list=`ipset list -n AMAZONAWS` >/dev/null 2>&1
-if [ "$list" != "AMAZONAWS" ]; then
-# ipset AMAZONAWS does not exist
-ipset create AMAZONAWS hash:net family inet hashsize 1024 maxelem 65536
+# if ipset AMAZONAWS does not exist, create it
+
+if [ "`ipset list -n AMAZONAWS`" != "AMAZONAWS" ]; then
+    ipset create AMAZONAWS hash:net family inet hashsize 1024 maxelem 65536
 fi
 
-#Pull all IPv4s listed for Amazon AWS
+# if ipset list AMAZONAWS is empty or source file is older than 24 hours, download source file; load ipset list
 
-jq -r '.prefixes | .[].ip_prefix' < /opt/tmp/ip-ranges.json > /opt/tmp/AmazonAWS
-ipset flush AMAZONAWS  
-awk '{print "add AMAZONAWS " $1}' /opt/tmp/AmazonAWS | ipset restore -!
+if [ "`ipset -L AMAZONAWS 2>/dev/null | awk '{ if (FNR == 7) print $0 }' | awk '{print $4 }'`" -eq "0" ]; then
+    if [ ! -s /opt/tmp/AmazonAWS ]; then 
+        download_AmazonAWS
+    fi
+    if [ "`find /opt/tmp/ -name AmazonAWS -mtime +1 -print`" = "/opt/tmp/AmazonAWS" ]; then
+        download_AmazonAWS
+    fi
+awk '{print "add AMAZONAWS " $1}' /opt/tmp/AmazonAWS | ipset restore -!  
+fi
 
-###########################################################
-#Create table to contain items added automatically by wan #
-###########################################################
+# Create fwmark for WAN Interface
+ 
 ip rule del prio 9990 > /dev/null 2>&1
 ip rule add from 0/0 fwmark 0x7000/0x7000 table main prio 9990
+
+# route NETFLIX and AMAZONAWS traffic to WAN
 
 iptables -t mangle -D PREROUTING -i br0 -p tcp -m set --match-set NETFLIX dst,dst -j MARK --set-mark 0x7000/0x7000 > /dev/null 2>&1
 iptables -t mangle -A PREROUTING -i br0 -p tcp -m set --match-set NETFLIX dst,dst -j MARK --set-mark 0x7000/0x7000
@@ -190,6 +231,6 @@ iptables -t mangle -A PREROUTING -i br0 -p tcp -m set --match-set NETFLIX dst,ds
 iptables -t mangle -D PREROUTING -i br0 -p tcp -m set --match-set AMAZONAWS dst,dst -j MARK --set-mark 0x7000/0x7000 > /dev/null 2>&1
 iptables -t mangle -A PREROUTING -i br0 -p tcp -m set --match-set AMAZONAWS dst,dst -j MARK --set-mark 0x7000/0x7000
 
-logger -t "($(basename $0))" $$ Ending IPSET_Netflix.sh..." $0${*:+ $*}."
+logger -t "($(basename $0))" $$ Completed Script Execution
 }
 main
