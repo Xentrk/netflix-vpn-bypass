@@ -107,13 +107,6 @@ if [ ! -s "/jffs/shared-SelectiveRouting-whitelist" ];then
   echo "ipinfo.io" > /jffs/shared-SelectiveRouting-whitelist
 fi
 
-# Create NETFLIX ipset list
-
-list=`ipset list -n NETFLIX` >/dev/null 2>&1
-if [ "$list" != "NETFLIX" ]; then
-    ipset create NETFLIX hash:net family inet hashsize 1024 maxelem 65536
-fi
-
 #Download Netflix AS2906 IPv4 addresses
 
 download_AS2906 () {
