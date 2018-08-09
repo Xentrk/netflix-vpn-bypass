@@ -68,7 +68,18 @@
 logger -t "($(basename $0))" $$ Starting Script Execution
 
 # Uncomment the line below for debugging
-#set -x
+set -x
+
+# Define Interface/bitmask to route BBC traffic to below 
+# 0x7000/0x7000- WAN
+# 0x1000/0x1000 - VPN Client 1
+# 0x2000/0x2000 - VPN Client 2
+# 0x3000/0x3000 - VPN Client 3
+# 0x4000/0x4000 - VPN Client 4
+# 0x5000/0x5000 - VPN Client 5
+FWMARK="0x7000/0x7000"
+
+FILE_DIR="/opt/tmp"
 
 # Prevent script from running concurrently when called from nat-start
 
@@ -102,34 +113,6 @@ main() {
 
 # Create shared-SelectiveRouting-whitelist file if one does not exist
 # to prevent ipinfo.io from being blocked by AB-Solution and Skynet
-
-if [ ! -s "/jffs/shared-SelectiveRouting-whitelist" ];then
-  echo "ipinfo.io" > /jffs/shared-SelectiveRouting-whitelist
-fi
-
-#Download Netflix AS2906 IPv4 addresses
-
-download_AS2906 () {
-    curl https://ipinfo.io/AS2906 2>/dev/null | grep -E "a href.*2906\/" | grep -v ":" | sed 's/^.*<a href="\/AS2906\///; s/" >//' > /opt/tmp/AS2906
-}
-
-# if ipset list NETFLIX does not exist, create it
-
-if [ "`ipset list -n NETFLIX`" != "NETFLIX" ]; then
-    ipset create NETFLIX hash:net family inet hashsize 1024 maxelem 65536
-fi
-
-# if ipset list NETFLIX is empty or source file is older than 24 hours, download source file; load ipset list  
-
-if [ "`ipset -L NETFLIX 2>/dev/null | awk '{ if (FNR == 7) print $0 }' | awk '{print $4 }'`" -eq "0" ]; then
-    if [ ! -s /opt/tmp/AS2906 ]; then 
-        download_AS2906
-    fi
-    if [ "`find /opt/tmp/ -name AmazonAWS -mtime +1 -print`" = "/opt/tmp/AmazonAWS" ]; then
-        download_AS2906
-    fi
-awk '{print "add NETFLIX " $1}' /opt/tmp/AS2906 | ipset restore -!  
-fi
 
 # Prevent entware funcion jq from executing until entware has mounted 
 # Chk_Entware function provided by @Martineau
@@ -182,48 +165,110 @@ Chk_Entware () {
    return $READY
 }
 
-Chk_Entware 'jq' || { echo -e "\a***ERROR*** Entware" $ENTWARE_UTILITY  "not available";exit 99; }
+whitelist_ipinfo () {
+if [ ! -s "/jffs/shared-SelectiveRouting-whitelist" ];then
+  echo "ipinfo.io" > /jffs/shared-SelectiveRouting-whitelist
+fi
+}
 
+#Download Netflix AS2906 IPv4 addresses
+
+download_AS2906 () {
+    curl https://ipinfo.io/AS2906 2>/dev/null | grep -E "a href.*2906\/" | grep -v ":" | sed 's/^.*<a href="\/AS2906\///; s/" >//' > "$FILE_DIR/x3mRouting_NETFLIX"
+    if [ "$?" = "1" ]; then  # file download failed
+        logger -t "($(basename "$0"))" $$ Script execution failed because Netflix AS2906 file could not be downloaded
+        exit 1
+    fi
+}
+
+# if ipset list NETFLIX does not exist, create it
+check_ipset_list_exist_x3mRouting_NETFLIX () {
+    if [ "$(ipset list -n x3mRouting_NETFLIX 2>/dev/null)" != "x3mRouting_NETFLIX" ]; then
+        ipset create x3mRouting_NETFLIX hash:net family inet hashsize 1024 maxelem 65536
+    fi
+}
+
+# if ipset list NETFLIX is empty or source file is older than 24 hours, download source file; load ipset list  
+
+check_ipset_list_values_x3mRouting_NETFLIX () {
+    if [ "$(ipset -L x3mRouting_NETFLIX 2>/dev/null | awk '{ if (FNR == 7) print $0 }' | awk '{print $4 }')" -eq "0" ]; then
+        if [ ! -s "$FILE_DIR/x3mRouting_NETFLIX" ] || [ "$(find "$FILE_DIR" -name x3mRouting_NETFLIX -mtime +7 -print)" = "$FILE_DIR/x3mRouting_NETFLIX" ]; then 
+            download_AS2906
+        fi
+        awk '{print "add x3mRouting_NETFLIX " $1}' "$FILE_DIR/x3mRouting_NETFLIX" | ipset restore -!  
+    else 
+        if [ ! -s "$FILE_DIR/x3mRouting_NETFLIX" ]; then
+            download_AS2906
+        fi
+    fi
+}
 
 # Download Amazon AWS json file
-
-download_AmazonAWS () {
-    wget https://ip-ranges.amazonaws.com/ip-ranges.json -O /opt/tmp/ip-ranges.json 
-    jq -r '.prefixes | .[].ip_prefix' < /opt/tmp/ip-ranges.json > /opt/tmp/AmazonAWS
-    rm -rf /opt/tmp/ip-ranges.json
+download_AMAZONAWS_US () {
+    wget https://ip-ranges.amazonaws.com/ip-ranges.json -O "$FILE_DIR/ip-ranges.json" 
+    if [ "$?" = "1" ]; then  # file download failed
+        logger -t "($(basename "$0"))" $$ Script execution failed because https://ip-ranges.amazonaws.com/ip-ranges.json file could not be downloaded
+        exit 1
+    fi
+    true > "$FILE_DIR/x3mRouting_AMAZONAWS_US"
+    for REGION in us-east-1 us-east-2 us-west-1 us-west-2
+        do
+            jq '.prefixes[] | select(.region=='\"$REGION\"') | .ip_prefix' < "$FILE_DIR/ip-ranges.json" | sed 's/"//g' | sort -u >> "$FILE_DIR/x3mRouting_AMAZONAWS_US"
+        done
 }
 
-# if ipset AMAZONAWS does not exist, create it
+# if ipset x3mRouting_AMAZONAWS does not exist, create it
 
-if [ "`ipset list -n AMAZONAWS`" != "AMAZONAWS" ]; then
-    ipset create AMAZONAWS hash:net family inet hashsize 1024 maxelem 65536
-fi
-
-# if ipset list AMAZONAWS is empty or source file is older than 24 hours, download source file; load ipset list
-
-if [ "`ipset -L AMAZONAWS 2>/dev/null | awk '{ if (FNR == 7) print $0 }' | awk '{print $4 }'`" -eq "0" ]; then
-    if [ ! -s /opt/tmp/AmazonAWS ]; then 
-        download_AmazonAWS
+check_ipset_list_exist_x3mRouting_AMAZONAWS_US () {
+    if [ "$(ipset list -n x3mRouting_AMAZONAWS_US 2>/dev/null)" != "x3mRouting_AMAZONAWS_US" ]; then
+        ipset create x3mRouting_AMAZONAWS_US hash:net family inet hashsize 1024 maxelem 65536
     fi
-    if [ "`find /opt/tmp/ -name AmazonAWS -mtime +1 -print`" = "/opt/tmp/AmazonAWS" ]; then
-        download_AmazonAWS
-    fi
-awk '{print "add AMAZONAWS " $1}' /opt/tmp/AmazonAWS | ipset restore -!  
-fi
+}
 
+# if ipset list AMAZONAWS_US is empty or source file is older than 7 days, download source file; load ipset list
+
+check_ipset_list_values_x3mRouting_AMAZONAWS_US () {
+    if [ "$(ipset -L x3mRouting_AMAZONAWS_US 2>/dev/null | awk '{ if (FNR == 7) print $0 }' | awk '{print $4 }')" -eq "0" ]; then
+        if [ ! -s "$FILE_DIR/x3mRouting_AMAZONAWS_US" ] || [ "$(find "$FILE_DIR" -name x3mRouting_AMAZONAWS_US -mtime +7 -print)" = "$FILE_DIR/x3mRouting_AMAZONAWS_US" ]; then 
+            download_AMAZONAWS_US
+        fi
+        awk '{print "add x3mRouting_AMAZONAWS_US " $1}' "$FILE_DIR/x3mRouting_AMAZONAWS_US" | ipset restore -!  
+    else 
+        if [ ! -s "$FILE_DIR/x3mRouting_AMAZONAWS_US" ]; then 
+            download_AMAZONAWS_US
+        fi
+    fi
+}
+
+# route NETFLIX and AMAZONAWS_US traffic to VPN Client
+
+create_routing_rules () {
 # Create fwmark for WAN Interface
  
-ip rule del prio 9990 > /dev/null 2>&1
-ip rule add from 0/0 fwmark 0x7000/0x7000 table main prio 9990
+    ip rule del prio 9990 > /dev/null 2>&1
+    ip rule add from 0/0 fwmark 0x7000/0x7000 table main prio 9990
+    ip route flush cache
 
-# route NETFLIX and AMAZONAWS traffic to WAN
+    iptables -t mangle -D PREROUTING -i br0 -p tcp -m set --match-set x3mRouting_NETFLIX dst,dst -j MARK --set-mark "$FWMARK" > /dev/null 2>&1
+    iptables -t mangle -A PREROUTING -i br0 -p tcp -m set --match-set x3mRouting_NETFLIX dst,dst -j MARK --set-mark "$FWMARK"
 
-iptables -t mangle -D PREROUTING -i br0 -p tcp -m set --match-set NETFLIX dst,dst -j MARK --set-mark 0x7000/0x7000 > /dev/null 2>&1
-iptables -t mangle -A PREROUTING -i br0 -p tcp -m set --match-set NETFLIX dst,dst -j MARK --set-mark 0x7000/0x7000
+    iptables -t mangle -D PREROUTING -i br0 -p tcp -m set --match-set x3mRouting_AMAZONAWS_US dst,dst -j MARK --set-mark "$FWMARK" > /dev/null 2>&1
+    iptables -t mangle -A PREROUTING -i br0 -p tcp -m set --match-set x3mRouting_AMAZONAWS_US dst,dst -j MARK --set-mark "$FWMARK"
+}
 
-iptables -t mangle -D PREROUTING -i br0 -p tcp -m set --match-set AMAZONAWS dst,dst -j MARK --set-mark 0x7000/0x7000 > /dev/null 2>&1
-iptables -t mangle -A PREROUTING -i br0 -p tcp -m set --match-set AMAZONAWS dst,dst -j MARK --set-mark 0x7000/0x7000
+Chk_Entware 'jq' || { echo -e "\a***ERROR*** Entware" $ENTWARE_UTILITY  "not available";exit 99; }
 
-logger -t "($(basename $0))" $$ Completed Script Execution
+whitelist_ipinfo
+
+check_ipset_list_exist_x3mRouting_NETFLIX
+check_ipset_list_values_x3mRouting_NETFLIX 
+
+check_ipset_list_exist_x3mRouting_AMAZONAWS_US
+check_ipset_list_values_x3mRouting_AMAZONAWS_US 
+
+create_routing_rules
+
 }
 main
+
+logger -t "($(basename "$0"))" $$ Completed Script Execution
