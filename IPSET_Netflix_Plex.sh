@@ -69,7 +69,7 @@ logger -t "($(basename $0))" $$ Starting Script Execution
 # Uncomment the line below for debugging
 set -x
 
-# Define Interface/bitmask to route BBC traffic to below 
+# Define Interface/bitmask for interfaces 
 # 0x7000/0x7000- WAN
 # 0x1000/0x1000 - VPN Client 1
 # 0x2000/0x2000 - VPN Client 2
