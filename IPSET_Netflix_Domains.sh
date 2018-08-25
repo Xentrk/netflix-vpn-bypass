@@ -35,27 +35,27 @@ FWMARK_OVPNC5="0x5000/0x5000"
 create_fwmarks () {
 # WAN
     ip rule del fwmark "$FWMARK_WAN" > /dev/null 2>&1
-    ip rule add fwmark "$FWMARK_WAN" table 254 prio 10000
+    ip rule add fwmark "$FWMARK_WAN" table 254 prio 9990
     
 #VPN Client 1
     ip rule del fwmark "$FWMARK_OVPNC1" > /dev/null 2>&1
-    ip rule add fwmark "$FWMARK_OVPNC1" table 111 prio 10100
+    ip rule add fwmark "$FWMARK_OVPNC1" table 111 prio 9991
 
 #VPN Client 2
     ip rule del fwmark "$FWMARK_OVPNC2" > /dev/null 2>&1
-    ip rule add fwmark "$FWMARK_OVPNC2" table 112 prio 10300
+    ip rule add fwmark "$FWMARK_OVPNC2" table 112 prio 9992
 
 #VPN Client 3
     ip rule del fwmark "$FWMARK_OVPNC3" > /dev/null 2>&1
-    ip rule add fwmark "$FWMARK_OVPNC3" table 113 prio 10500
+    ip rule add fwmark "$FWMARK_OVPNC3" table 113 prio 9993
 
 #VPN Client 4
     ip rule del fwmark "$FWMARK_OVPNC4" > /dev/null 2>&1
-    ip rule add fwmark "$FWMARK_OVPNC4" table 114 prio 10700
+    ip rule add fwmark "$FWMARK_OVPNC4" table 114 prio 9994
 
 #VPN Client 5
     ip rule del fwmark "$FWMARK_OVPNC5" > /dev/null 2>&1
-    ip rule add fwmark "$FWMARK_OVPNC5" table 115 prio 10800
+    ip rule add fwmark "$FWMARK_OVPNC5" table 115 prio 9995
 
     ip route flush cache
 }
@@ -155,8 +155,8 @@ check_cron_job () {
 
 # Route Netflix to WAN
 create_routing_rules () {
-    iptables -t mangle -D PREROUTING -i br0 -p tcp -m set --match-set NETFLIX dst,dst -j MARK --set-mark "$FWMARK_WAN" > /dev/null 2>&1
-    iptables -t mangle -A PREROUTING -i br0 -p tcp -m set --match-set NETFLIX dst,dst -j MARK --set-mark "$FWMARK_WAN" 
+    iptables -t mangle -D PREROUTING -i br0 -p tcp -m set --match-set NETFLIX dst -j MARK --set-mark "$FWMARK_WAN" > /dev/null 2>&1
+    iptables -t mangle -A PREROUTING -i br0 -p tcp -m set --match-set NETFLIX dst -j MARK --set-mark "$FWMARK_WAN" 
 
     ip route flush cache
 }
