@@ -155,8 +155,8 @@ check_cron_job () {
 
 # Route Netflix to WAN
 create_routing_rules () {
-    iptables -t mangle -D PREROUTING -i br0 -p tcp -m set --match-set NETFLIX dst -j MARK --set-mark "$FWMARK_WAN" > /dev/null 2>&1
-    iptables -t mangle -A PREROUTING -i br0 -p tcp -m set --match-set NETFLIX dst -j MARK --set-mark "$FWMARK_WAN" 
+    iptables -t mangle -D PREROUTING -i br0 -m set --match-set NETFLIX dst -j MARK --set-mark "$FWMARK_WAN" > /dev/null 2>&1
+    iptables -t mangle -A PREROUTING -i br0 -m set --match-set NETFLIX dst -j MARK --set-mark "$FWMARK_WAN" 
 
     ip route flush cache
 }
