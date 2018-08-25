@@ -114,13 +114,13 @@ Chk_Entware () {
 # check if /jffs/configs/dnsmasq.conf.add contains entry for iplayer website
 check_dnsmasq () {
     if [ -s /jffs/configs/dnsmasq.conf.add ]; then  # dnsmasq.conf.add file exists
-        grep "ipset=btstatic.com/netflix.com/nflxext.com/nflximg.net/nflxso.net/nflxvideo.net/thebrighttag.com/NETFLIX" "/jffs/configs/dnsmasq.conf.add"  # see if line exists for NETFLIX
+        grep "ipset=/btstatic.com/netflix.com/nflxext.com/nflximg.net/nflxso.net/nflxvideo.net/thebrighttag.com/NETFLIX" "/jffs/configs/dnsmasq.conf.add"  # see if line exists for NETFLIX
         if [ "$?" = "1" ]; then  # no line for NETFLIX found
-            printf "ipset=btstatic.com/netflix.com/nflxext.com/nflximg.net/nflxso.net/nflxvideo.net/thebrighttag.com/NETFLIX\n" >> /jffs/configs/dnsmasq.conf.add # add NETFLIX entry to dnsmasq.conf.add
+            printf "ipset=/btstatic.com/netflix.com/nflxext.com/nflximg.net/nflxso.net/nflxvideo.net/thebrighttag.com/NETFLIX\n" >> /jffs/configs/dnsmasq.conf.add # add NETFLIX entry to dnsmasq.conf.add
             service restart_dnsmasq > /dev/null 2>&1
         fi
     else
-        printf "ipset=btstatic.com/netflix.com/nflxext.com/nflximg.net/nflxso.net/nflxvideo.net/thebrighttag.com/NETFLIX" > /jffs/configs/dnsmasq.conf.add # dnsmasq.conf.add does not exist, create dnsmasq.conf.add
+        printf "ipset=/btstatic.com/netflix.com/nflxext.com/nflximg.net/nflxso.net/nflxvideo.net/thebrighttag.com/NETFLIX" > /jffs/configs/dnsmasq.conf.add # dnsmasq.conf.add does not exist, create dnsmasq.conf.add
         service restart_dnsmasq > /dev/null 2>&1
     fi
 }
