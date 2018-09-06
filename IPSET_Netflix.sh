@@ -3,7 +3,6 @@
 # Script: IPSET_Netflix.sh
 # Author: Xentrk
 # 5-July-2018 Version 3.5
-# Collaborators: @Martineau, @thelonelycoder, @Adamm
 #
 # Thank you to @Martineau on snbforums.com for educating myself and others on Selective
 # Routing techniques using Asuswrt-Merlin firmware.
@@ -13,17 +12,17 @@
 #####################################################################################################
 # Script Description:
 #
-# Bypass the OpenVPN Client and selectively route Netflix traffic to the WAN interface on 
+# Bypass the OpenVPN Client and selectively route Netflix traffic to the WAN interface on
 # AsusWRT-Merlin firmware
 #
 # Since January 2016, Netflix blocks known VPN servers. The purpose of the IPSET_Netflix.sh
-# script is to bypass the OpenVPN Client for Netflix traffic and route it to the WAN interface. 
-# Netflix also hosts on Amazon AWS servers. Because of this, the script will also route Amazon AWS 
+# script is to bypass the OpenVPN Client for Netflix traffic and route it to the WAN interface.
+# Netflix also hosts on Amazon AWS servers. Because of this, the script will also route Amazon AWS
 # traffic, including Amazon and Amazon Prime traffic, to the WAN interface.
 #
-# Autonomous System Numbers (ASNs) are assigned to entities such as Internet Service Providers and 
-# other large organizations that control blocks of IP addresses. The ASN for Netflix is AS2906. 
-# Amazon AWS supplies the list of IPv4 addresses in the json file available at 
+# Autonomous System Numbers (ASNs) are assigned to entities such as Internet Service Providers and
+# other large organizations that control blocks of IP addresses. The ASN for Netflix is AS2906.
+# Amazon AWS supplies the list of IPv4 addresses in the json file available at
 # https://ip-ranges.amazonaws.com/ip-ranges.json
 #
 # This script will
@@ -39,45 +38,33 @@
 #
 # Requirements
 #
-#  1) Installation of entware package jq. jq is a json file parser. To install, enter the command "opkg install jq" on the command line. 
+#  1) Installation of entware package jq. jq is a json file parser. To install, enter the command "opkg install jq" on the command line.
 #  2) ipset version 6. Support for ipset version 4.5 is planned for a future release
 #
-# Note 1: IPSET syntax differs between version 6 and 4.5
-#             Syntax for ipset v6
-#                ipset create WAN0 list:set
-#                ipset add WAN0 ipv4addr
-#                --match-set
-#             for routers running ipset v4.5 (ipset -V)
-#                create ipset list: ipset -N WAN0 nethash
-#                add ipv4 addresses to ipset list: ipset -A WAN0 ipv4addr
-#               --set
-#
-# Note 2: In the event one needs to use IPv6 in the future, the syntax is: ipset -N NETFLIX-v6 hash:net family ipv6
-#
-# Note 3: Troubleshooting
+# Troubleshooting
 #
 # You can use these sites for AS validation and troubleshooting to lookup ASNs:
 #  https://bgp.he.net/AS16509 - This is the ASN for Amazon USA (Click on the prefixes tab to view IP addresses)
 #  https://ipinfo.io/AS2906 - Netflix ASN
-# 
-# Note 4: Required OpenVPN Client Settings
+#
+# Required OpenVPN Client Settings
 #
 #  - Redirect Internet Traffic = Policy Rules or Policy Rules (Strict)
-#  
+#
 #######################################################################
 logger -t "($(basename $0))" $$ Starting Script Execution
 
 # Uncomment the line below for debugging
-set -x
+# set -x
 
-# Define Interface/bitmask to route BBC traffic to below 
+# Define Interface/bitmask to route Netflix traffic to below
 # 0x7000/0x7000- WAN
 # 0x1000/0x1000 - VPN Client 1
 # 0x2000/0x2000 - VPN Client 2
 # 0x3000/0x3000 - VPN Client 3
 # 0x4000/0x4000 - VPN Client 4
 # 0x5000/0x5000 - VPN Client 5
-FWMARK="0x7000/0x7000"
+FWMARK="0x8000/0x8000"
 
 FILE_DIR="/opt/tmp"
 
@@ -111,10 +98,7 @@ main() {
     lock $PROGNAME \
         || eexit "Only one instance of $PROGNAME can run at one time."
 
-# Create shared-SelectiveRouting-whitelist file if one does not exist
-# to prevent ipinfo.io from being blocked by AB-Solution and Skynet
-
-# Prevent entware funcion jq from executing until entware has mounted 
+# Prevent entware funcion jq from executing until entware has mounted
 # Chk_Entware function provided by @Martineau
 
 Chk_Entware () {
@@ -129,7 +113,7 @@ Chk_Entware () {
     if [ ! -z "$2" ] && [ ! -z "$(echo $2 | grep -E '^[0-9]+$')" ];then
         local MAX_TRIES=$2
     fi
- 
+
     if [ ! -z "$1" ] && [ -z "$(echo $1 | grep -E '^[0-9]+$')" ];then
         ENTWARE_UTILITY=$1
     else
@@ -161,9 +145,12 @@ Chk_Entware () {
       logger -st "($(basename $0))" $$ "Entware" $ENTWARE_UTILITY "not available - wait time" $((MAX_TRIES - TRIES-1))" secs left"
       local TRIES=$((TRIES + 1))
    done
- 
+
    return $READY
 }
+
+# Create shared-SelectiveRouting-whitelist file if one does not exist
+# to prevent ipinfo.io from being blocked by Diversion and Skynet
 
 whitelist_ipinfo () {
 if [ ! -s "/jffs/shared-SelectiveRouting-whitelist" ];then
@@ -188,15 +175,15 @@ check_ipset_list_exist_x3mRouting_NETFLIX () {
     fi
 }
 
-# if ipset list NETFLIX is empty or source file is older than 24 hours, download source file; load ipset list  
+# if ipset list NETFLIX is empty or source file is older than 24 hours, download source file; load ipset list
 
 check_ipset_list_values_x3mRouting_NETFLIX () {
     if [ "$(ipset -L x3mRouting_NETFLIX 2>/dev/null | awk '{ if (FNR == 7) print $0 }' | awk '{print $4 }')" -eq "0" ]; then
-        if [ ! -s "$FILE_DIR/x3mRouting_NETFLIX" ] || [ "$(find "$FILE_DIR" -name x3mRouting_NETFLIX -mtime +7 -print)" = "$FILE_DIR/x3mRouting_NETFLIX" ]; then 
+        if [ ! -s "$FILE_DIR/x3mRouting_NETFLIX" ] || [ "$(find "$FILE_DIR" -name x3mRouting_NETFLIX -mtime +7 -print)" = "$FILE_DIR/x3mRouting_NETFLIX" ]; then
             download_AS2906
         fi
-        awk '{print "add x3mRouting_NETFLIX " $1}' "$FILE_DIR/x3mRouting_NETFLIX" | ipset restore -!  
-    else 
+        awk '{print "add x3mRouting_NETFLIX " $1}' "$FILE_DIR/x3mRouting_NETFLIX" | ipset restore -!
+    else
         if [ ! -s "$FILE_DIR/x3mRouting_NETFLIX" ]; then
             download_AS2906
         fi
@@ -205,7 +192,7 @@ check_ipset_list_values_x3mRouting_NETFLIX () {
 
 # Download Amazon AWS json file
 download_AMAZONAWS_US () {
-    wget https://ip-ranges.amazonaws.com/ip-ranges.json -O "$FILE_DIR/ip-ranges.json" 
+    wget https://ip-ranges.amazonaws.com/ip-ranges.json -O "$FILE_DIR/ip-ranges.json"
     if [ "$?" = "1" ]; then  # file download failed
         logger -t "($(basename "$0"))" $$ Script execution failed because https://ip-ranges.amazonaws.com/ip-ranges.json file could not be downloaded
         exit 1
@@ -229,12 +216,12 @@ check_ipset_list_exist_x3mRouting_AMAZONAWS_US () {
 
 check_ipset_list_values_x3mRouting_AMAZONAWS_US () {
     if [ "$(ipset -L x3mRouting_AMAZONAWS_US 2>/dev/null | awk '{ if (FNR == 7) print $0 }' | awk '{print $4 }')" -eq "0" ]; then
-        if [ ! -s "$FILE_DIR/x3mRouting_AMAZONAWS_US" ] || [ "$(find "$FILE_DIR" -name x3mRouting_AMAZONAWS_US -mtime +7 -print)" = "$FILE_DIR/x3mRouting_AMAZONAWS_US" ]; then 
+        if [ ! -s "$FILE_DIR/x3mRouting_AMAZONAWS_US" ] || [ "$(find "$FILE_DIR" -name x3mRouting_AMAZONAWS_US -mtime +7 -print)" = "$FILE_DIR/x3mRouting_AMAZONAWS_US" ]; then
             download_AMAZONAWS_US
         fi
-        awk '{print "add x3mRouting_AMAZONAWS_US " $1}' "$FILE_DIR/x3mRouting_AMAZONAWS_US" | ipset restore -!  
-    else 
-        if [ ! -s "$FILE_DIR/x3mRouting_AMAZONAWS_US" ]; then 
+        awk '{print "add x3mRouting_AMAZONAWS_US " $1}' "$FILE_DIR/x3mRouting_AMAZONAWS_US" | ipset restore -!
+    else
+        if [ ! -s "$FILE_DIR/x3mRouting_AMAZONAWS_US" ]; then
             download_AMAZONAWS_US
         fi
     fi
@@ -244,7 +231,7 @@ check_ipset_list_values_x3mRouting_AMAZONAWS_US () {
 
 create_routing_rules () {
 # Create fwmark for WAN Interface
- 
+
     ip rule del prio 9990 > /dev/null 2>&1
     ip rule add from 0/0 fwmark 0x7000/0x7000 table main prio 9990
     ip route flush cache
@@ -261,10 +248,10 @@ Chk_Entware 'jq' || { echo -e "\a***ERROR*** Entware" $ENTWARE_UTILITY  "not ava
 whitelist_ipinfo
 
 check_ipset_list_exist_x3mRouting_NETFLIX
-check_ipset_list_values_x3mRouting_NETFLIX 
+check_ipset_list_values_x3mRouting_NETFLIX
 
 check_ipset_list_exist_x3mRouting_AMAZONAWS_US
-check_ipset_list_values_x3mRouting_AMAZONAWS_US 
+check_ipset_list_values_x3mRouting_AMAZONAWS_US
 
 create_routing_rules
 

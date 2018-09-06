@@ -3,20 +3,49 @@
 # Script: IPSET_Netflix_Domains.sh
 # Version 1.0
 # Author: Xentrk
-# Date: 20-August-2018 
+# Date: 6-September-2018
 #
 # Description:
-#    Selective Routing Script for Netflix using Asuswrt-Merlin firmware.
-#  
+#    Selective Routing Script for Netflix using Asuswrt-Merlin firmware.  This version uses the ipset method
+#    built into dnsmasq.  An entry for Netflix Domains
+#
 # Grateful:
 #   Thank you to @Martineau on snbforums.com for sharing his Selective Routing expertise
-#   and on-going support!  
+#   and on-going support!
 #
 ####################################################################################################
-logger -t "($(basename $0))" $$ Starting Script Execution
+logger -t "($(basename "$0"))" $$ Starting Script Execution
 
 # Uncomment the line below for debugging
-#set -x
+set -x
+
+PROGNAME=$(basename "$0")
+LOCKFILE_DIR=/tmp
+LOCK_FD=200
+
+lock() {
+    local prefix=$1
+    local fd=${2:-$LOCK_FD}
+    local lock_file=$LOCKFILE_DIR/$prefix.lock
+
+    # create lock file
+    eval "exec $fd>$lock_file"
+
+    # acquier the lock
+    flock -n $fd \
+        && return 0 \
+        || return 1
+}
+
+eexit() {
+    local error_str="$@"
+    echo $error_str
+    exit 1
+}
+
+main() {
+    lock $PROGNAME \
+        || eexit "Only one instance of $PROGNAME can run at one time."
 
 ### Define interface/bitmask to route traffic to below
 # 0x7000/0x7000- WAN
@@ -25,37 +54,37 @@ logger -t "($(basename $0))" $$ Starting Script Execution
 # 0x3000/0x3000 - VPN Client 3
 # 0x4000/0x4000 - VPN Client 4
 # 0x5000/0x5000 - VPN Client 5
-FWMARK_WAN="0x7000/0x7000"
+FWMARK_WAN="0x8000/0x8000"
 FWMARK_OVPNC1="0x1000/0x1000"
 FWMARK_OVPNC2="0x2000/0x2000"
-FWMARK_OVPNC3="0x3000/0x3000"
-FWMARK_OVPNC4="0x4000/0x4000"
-FWMARK_OVPNC5="0x5000/0x5000"
+FWMARK_OVPNC3="0x4000/0x4000"
+FWMARK_OVPNC4="0x7000/0x7000"
+FWMARK_OVPNC5="0x3000/0x3000"
 
 create_fwmarks () {
 # WAN
-    ip rule del fwmark "$FWMARK_WAN" > /dev/null 2>&1
-    ip rule add fwmark "$FWMARK_WAN" table 254 prio 9990
-    
+    ip rule del fwmark 0x8000/0x8000 > /dev/null 2>&1
+    ip rule add from 0/0 fwmark 0x8000/0x8000 table 254 prio 9990
+
 #VPN Client 1
-    ip rule del fwmark "$FWMARK_OVPNC1" > /dev/null 2>&1
-    ip rule add fwmark "$FWMARK_OVPNC1" table 111 prio 9991
+    ip rule del fwmark 0x1000/0x1000 > /dev/null 2>&1
+    ip rule add from 0/0 fwmark 0x1000/0x1000 table 111 prio 9995
 
 #VPN Client 2
-    ip rule del fwmark "$FWMARK_OVPNC2" > /dev/null 2>&1
-    ip rule add fwmark "$FWMARK_OVPNC2" table 112 prio 9992
+    ip rule del fwmark 0x2000/0x2000 > /dev/null 2>&1
+    ip rule add from 0/0 fwmark 0x2000/0x2000 table 112 prio 9994
 
 #VPN Client 3
-    ip rule del fwmark "$FWMARK_OVPNC3" > /dev/null 2>&1
-    ip rule add fwmark "$FWMARK_OVPNC3" table 113 prio 9993
+    ip rule del fwmark 0x4000/0x4000 > /dev/null 2>&1
+    ip rule add from 0/0 fwmark 0x4000/0x4000 table 113 prio 9993
 
 #VPN Client 4
-    ip rule del fwmark "$FWMARK_OVPNC4" > /dev/null 2>&1
-    ip rule add fwmark "$FWMARK_OVPNC4" table 114 prio 9994
+    ip rule del fwmark 0x7000/0x7000 > /dev/null 2>&1
+    ip rule add from 0/0 fwmark 0x7000/0x7000 table 114 prio 9992
 
 #VPN Client 5
-    ip rule del fwmark "$FWMARK_OVPNC5" > /dev/null 2>&1
-    ip rule add fwmark "$FWMARK_OVPNC5" table 115 prio 9995
+    ip rule del fwmark 0x3000/0x3000 > /dev/null 2>&1
+    ip rule add from 0/0 fwmark 0x3000/0x3000 table 115 prio 9991
 
     ip route flush cache
 }
@@ -75,7 +104,7 @@ Chk_Entware () {
     if [ ! -z "$2" ] && [ ! -z "$(echo $2 | grep -E '^[0-9]+$')" ];then
         local MAX_TRIES=$2
     fi
- 
+
     if [ ! -z "$1" ] && [ -z "$(echo $1 | grep -E '^[0-9]+$')" ];then
         ENTWARE_UTILITY=$1
     else
@@ -87,14 +116,14 @@ Chk_Entware () {
    # Wait up to (default) 30 seconds to see if Entware utilities available.....
    local TRIES=0
 
-   while [ $TRIES -lt $MAX_TRIES ];do
-      if [ ! -z "$(which $ENTWARE)" ] && [ "$($ENTWARE -v | grep -o "version")" == "version" ];then
+   while [ "$TRIES" -lt "$MAX_TRIES" ];do
+      if [ ! -z "$(which "$ENTWARE")" ] && [ "$("$ENTWARE" -v | grep -o "version")" == "version" ];then
          if [ ! -z "$ENTWARE_UTILITY" ];then            # Specific Entware utility installed?
-            if [ ! -z "$($ENTWARE list-installed $ENTWARE_UTILITY)" ];then
+            if [ ! -z "$("$ENTWARE" list-installed "$ENTWARE_UTILITY")" ];then
                 READY=0                                 # Specific Entware utility found
             else
                 # Not all Entware utilities exists as a stand-alone package e.g. 'find' is in package 'findutils'
-                if [ -d /opt ] && [ ! -z "$(find /opt/ -name $ENTWARE_UTILITY)" ];then
+                if [ -d /opt ] && [ ! -z "$(find /opt/ -name "$ENTWARE_UTILITY")" ];then
                   READY=0                               # Specific Entware utility found
                 fi
             fi
@@ -107,56 +136,54 @@ Chk_Entware () {
       logger -st "($(basename $0))" $$ "Entware" $ENTWARE_UTILITY "not available - wait time" $((MAX_TRIES - TRIES-1))" secs left"
       local TRIES=$((TRIES + 1))
    done
- 
+
    return $READY
 }
- 
-# check if /jffs/configs/dnsmasq.conf.add contains entry for iplayer website
+
+# check if /jffs/configs/dnsmasq.conf.add contains entry for Netflix domains
 check_dnsmasq () {
     if [ -s /jffs/configs/dnsmasq.conf.add ]; then  # dnsmasq.conf.add file exists
-        grep "ipset=/btstatic.com/netflix.com/nflxext.com/nflximg.net/nflxso.net/nflxvideo.net/thebrighttag.com/NETFLIX" "/jffs/configs/dnsmasq.conf.add"  # see if line exists for NETFLIX
-        if [ "$?" = "1" ]; then  # no line for NETFLIX found
-            printf "ipset=/btstatic.com/netflix.com/nflxext.com/nflximg.net/nflxso.net/nflxvideo.net/thebrighttag.com/NETFLIX\n" >> /jffs/configs/dnsmasq.conf.add # add NETFLIX entry to dnsmasq.conf.add
+        if [ "$(grep -c "ipset=/amazonaws.com/akamaiedge.net/netflix.com/nflxext.com/nflximg.net/nflxso.net/nflxvideo.net/x3mRouting_NETFLIX_DNSMASQ" "/jffs/configs/dnsmasq.conf.add")" -eq "0" ]; then  # see if line exists for x3mRouting_NETFLIX_DNSMASQ
+            printf "ipset=/amazonaws.com/akamaiedge.net/netflix.com/nflxext.com/nflximg.net/nflxso.net/nflxvideo.net/x3mRouting_NETFLIX_DNSMASQ\n" >> /jffs/configs/dnsmasq.conf.add # add NETFLIX entry to dnsmasq.conf.add
             service restart_dnsmasq > /dev/null 2>&1
         fi
     else
-        printf "ipset=/btstatic.com/netflix.com/nflxext.com/nflximg.net/nflxso.net/nflxvideo.net/thebrighttag.com/NETFLIX" > /jffs/configs/dnsmasq.conf.add # dnsmasq.conf.add does not exist, create dnsmasq.conf.add
+        printf "ipset=/amazonaws.com/akamaiedge.net/netflix.com/nflxext.com/nflximg.net/nflxso.net/nflxvideo.net/x3mRouting_NETFLIX_DNSMASQ\n" > /jffs/configs/dnsmasq.conf.add # dnsmasq.conf.add does not exist, create dnsmasq.conf.add
         service restart_dnsmasq > /dev/null 2>&1
     fi
 }
 
-# Create IPSET list NETFLIX
-check_ipset_list () {    
-    if [ "`ipset list -n NETFLIX`" != "NETFLIX" ]; then #does NETFLIX ipset list exist?
-        if [ -s /opt/tmp/NETFLIX ]; then # does NETFLIX ipset restore file exist? 
-            ipset restore -! < /opt/tmp/NETFLIX   # Restore ipset list if restore file exists at /opt/tmp/NETFLIX
+check_ipset_list () {
+    if [ "$(ipset list -n x3mRouting_NETFLIX_DNSMASQ 2>/dev/null)" != "x3mRouting_NETFLIX_DNSMASQ" ]; then #does NETFLIX ipset list exist?
+        if [ -s /opt/tmp/x3mRouting_NETFLIX_DNSMASQ ]; then # does x3mRouting_NETFLIX_DNSMASQ ipset restore file exist?
+            ipset restore -! < /opt/tmp/x3mRouting_NETFLIX_DNSMASQ   # Restore ipset list if restore file exists at /opt/tmp/x3mRouting_NETFLIX_DNSMASQ
         else
-            ipset create NETFLIX hash:net family inet hashsize 1024 maxelem 65536  # No restore file, so create NETFLIX ipset list from scratch
+            ipset create x3mRouting_NETFLIX_DNSMASQ hash:net family inet hashsize 1024 maxelem 65536  # No restore file, so create x3mRouting_NETFLIX_DNSMASQ ipset list from scratch
         fi
     fi
 }
 
-# if ipset list NETFLIX is older than 24 hours, save the current ipset list to disk   
+# if ipset list NETFLIX is older than 24 hours, save the current ipset list to disk
 check_NETFLIX_restore_file_age () {
-    if [ -s /opt/tmp/NETFLIX ]; then
-        if [ "`find /opt/tmp/NETFLIX -name NETFLIX -mtime +1 -print /dev/null 2>&1`" = "/opt/tmp/NETFLIX" ] ; then
-            ipset save NETFLIX > /opt/tmp/NETFLIX
+    if [ -s /opt/tmp/x3mRouting_NETFLIX_DNSMASQ ]; then
+        if [ "$(find /opt/tmp/x3mRouting_NETFLIX_DNSMASQ -name x3mRouting_NETFLIX_DNSMASQ -mtime +1 -print /dev/null 2>&1)" = "/opt/tmp/x3mRouting_NETFLIX_DNSMASQ" ] ; then
+            ipset save NETFLIX > /opt/tmp/x3mRouting_NETFLIX_DNSMASQ
         fi
     fi
 }
 
 # If cronjob to back up the NETFLIX ipset list every 24 hours @ 2:00 AM does not exist, then create it
 check_cron_job () {
-    cru l | grep NETFLIX_ipset_list 
+    cru l | grep x3mRouting_NETFLIX_DNSMASQ_ipset_list
     if [ "$?" = "1" ]; then  # no cronjob entry found, create it
-        cru a NETFLIX_ipset_list "0 2 * * * ipset save NETFLIX > /opt/tmp/NETFLIX"
+        cru a x3mRouting_NETFLIX_DNSMASQ_ipset_list "0 2 * * * ipset save NETFLIX > /opt/tmp/x3mRouting_NETFLIX_DNSMASQ"
     fi
 }
 
 # Route Netflix to WAN
 create_routing_rules () {
-    iptables -t mangle -D PREROUTING -i br0 -m set --match-set NETFLIX dst -j MARK --set-mark "$FWMARK_WAN" > /dev/null 2>&1
-    iptables -t mangle -A PREROUTING -i br0 -m set --match-set NETFLIX dst -j MARK --set-mark "$FWMARK_WAN" 
+    iptables -t mangle -D PREROUTING -i br0 -m set --match-set x3mRouting_NETFLIX_DNSMASQ dst -j MARK --set-mark "$FWMARK_WAN" > /dev/null 2>&1
+    iptables -t mangle -A PREROUTING -i br0 -m set --match-set x3mRouting_NETFLIX_DNSMASQ dst -j MARK --set-mark "$FWMARK_WAN"
 
     ip route flush cache
 }
@@ -169,4 +196,6 @@ check_NETFLIX_restore_file_age
 check_cron_job
 create_routing_rules
 
-logger -t "($(basename $0))" $$ Ending Script Execution
+logger -t "($(basename $0))" $$ Completed Script Execution
+}
+main
