@@ -1,7 +1,7 @@
 # netflix-vpn-bypass
 Selectively route Netflix traffic to the WAN interface, or one of the five OpenVPN clients, on **Asuswrt-Merlin** firmware.  
 
-Since January 2016, Netflix blocks known VPN servers. This project was originally developed to bypass the OpenVPN client for Netflix traffic and route it to the WAN interface. The scripts now provide the ability to route Netflix traffic to an OpenVPN Client if desired. This can be accomplished by editing the $FWMARK parameter in the iptables commands inside the **create_routing_rules** function.  
+Since January 2016, Netflix blocks known VPN servers. This project was originally developed to bypass the OpenVPN client for Netflix traffic and route it to the WAN interface. The scripts now provide the ability to route Netflix traffic to an OpenVPN Client if desired. This can be accomplished by editing the $FWMARK parameter in the iptables commands inside the **create_routing_rules** function. If you want a VPN provider who can circumvent the Netflix VPN ban, see my blog post [Why I use Torguard as my VPN Provider](https://x3mtek.com/why-i-use-torguard-as-my-vpn-provider) to learn more. 
 
 Netflix hosts on Amazon AWS servers. As a result, Amazon AWS domains in the US are also included.
 
@@ -38,6 +38,8 @@ This script will:
 #### Installation
 
     /usr/sbin/curl --retry 3 "https://raw.githubusercontent.com/Xentrk/netflix-vpn-bypass/master/IPSET_Netflix.sh" -o /jffs/scripts/IPSET_Netflix.sh
+
+If the script runs successfully, you can have the script execute at system start-up by calling it from **/jffs/scripts/nat-start** by including the line ```sh /jffs/scripts/IPSET_Netflix.sh``` in the file.  Make sure **nat-start** has a she-bang as the first line in the file ```#!\bin\sh``` and is executable e.g. ```chmod 755 /jffs/scripts/nat-start```.  
 
 ### IPSET_Netflix_Domains.sh
 **IPSET_Netflix_Domains.sh** uses the feature of ipset in dnsmasq to dynamically generate the IPv4 address used by Netflix and Amazon AWS dynamically.  The script will create a cron job that will backup the IPSET list at 2:00 am.  The backup will be used to restore the IPSET list upon system startup.  
