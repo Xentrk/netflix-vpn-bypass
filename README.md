@@ -11,7 +11,7 @@ There are two selective routing scripts used in this project. Each one uses a di
 
 Only the Amazon AWS US Regions are extracted from ip-ranges.json. As a result, the script will also route all Amazon AWS traffic bound for the US, including Amazon Prime traffic, to the WAN interface.
 
-**IPSET_Netflix_Domains.sh** uses the IPSET feature built into dnsmasq to dynamically generate the IPv4 address used by Netflix and Amazon AWS dynamically.  This approach can be useful when your ISP is using the [Netflix Open Connect Network](https://media.netflix.com/en/company-blog/how-netflix-works-with-isps-around-the-globe-to-deliver-a-great-viewing-experience).  This method has the benefit of being more specific in the domains used to route Netflix traffic to the WAN.
+**IPSET_Netflix_Domains.sh** uses the IPSET feature built into dnsmasq to dynamically generate the IPv4 address used by Netflix and Amazon AWS dynamically.  This approach can be useful when your ISP is using the [Netflix Open Connect Network](https://media.netflix.com/en/company-blog/how-netflix-works-with-isps-around-the-globe-to-deliver-a-great-viewing-experience).
 
 #### Requirements
 
@@ -43,7 +43,7 @@ If the script runs successfully, you can have the script execute at system start
 ### IPSET_Netflix_Domains.sh
 **IPSET_Netflix_Domains.sh** uses the feature of ipset in dnsmasq to dynamically generate the IPv4 address used by Netflix and Amazon AWS dynamically.  The script will create a cron job that will backup the IPSET list at 2:00 am.  The backup will be used to restore the IPSET list upon system startup.  
 
-This approach can be useful when your ISP is using the [Netflix Open Connect Network](https://media.netflix.com/en/company-blog/how-netflix-works-with-isps-around-the-globe-to-deliver-a-great-viewing-experience).  The domains names used may vary by region. As a result, you will have to do some analysis to determine the domain names Netflix is using.
+This approach can be useful when your ISP is using the [Netflix Open Connect Network](https://media.netflix.com/en/company-blog/how-netflix-works-with-isps-around-the-globe-to-deliver-a-great-viewing-experience).  The domain names used may vary by region. As a result, you will have to do some analysis to determine the domain names Netflix is using.
 
 To determine the domain names, follow the install instructions to download the script **getdomainnames.sh** to **/jffs/scripts/getdomainnames.sh**. Navigate to the dnsmasq log file directory. My dnsmasq.log file location is **/opt/var/log**.   
 
