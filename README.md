@@ -7,8 +7,7 @@ Netflix hosts on Amazon AWS servers. As a result, Amazon AWS domains in the US a
 
 There are two selective routing scripts used in this project. Each one uses a different method to collect the IPv4 addresses required for selective routing. Both scripts use the features of [IPSET](http://ipset.netfilter.org/) to collect IPv4 addresses in IPSET lists and match against the IPSET lists.
 
-**IPSET_Netflix.sh** collects the IPv4 addresses used by Netflix from https://ipinfo.io using the Autonomous System Number (ASN) assigned to Netflix. Amazon AWS supplies the list of IPv4 addresses in the json file at
-https://ip-ranges.amazonaws.com/ip-ranges.json
+**IPSET_Netflix.sh** collects the IPv4 addresses used by Netflix from https://ipinfo.io using the Autonomous System Number (ASN) assigned to Netflix. Amazon AWS supplies the list of IPv4 addresses in the json file at https://ip-ranges.amazonaws.com/ip-ranges.json
 
 Only the Amazon AWS US Regions are extracted from ip-ranges.json. As a result, the script will also route all Amazon AWS traffic bound for the US, including Amazon Prime traffic, to the WAN interface.
 
@@ -21,7 +20,7 @@ Only the Amazon AWS US Regions are extracted from ip-ranges.json. As a result, t
 3. ipset version 6. To confirm the version you have installed, type ```ipset -v```
 4. OpenVPN Client Settings:
     - set **Redirect Internet traffic** to **Policy Rules** or **Policy Rules (Strict)**
-    - dnsmasq is bypassed when **Accept DNS Configuration** is set to **Exclusive**.  I recommend setting **Accept DNS Configuration**  to **Strict**. In the **Custom Config** section, specify a DNS server of your choice using the command ```dhcp-option DNS xxx.xxx.xxx.xxx``` where the xxx's are a DNS server of your choice. For example:
+    - dnsmasq is bypassed when **Accept DNS Configuration** is set to **Exclusive**.  I recommend setting **Accept DNS Configuration**  to **Strict** as a solution. In the **Custom Config** section, specify a DNS server of your choice using the command ```dhcp-option DNS xxx.xxx.xxx.xxx``` where the xxx's are a DNS server of your choice. For example:
     ```dhcp-option DNS 1.1.1.1```
 
 ### IPSET_Netflix.sh
