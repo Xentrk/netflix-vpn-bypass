@@ -99,7 +99,7 @@ The ```nslookup <domain_name>``` command is useful in looking up IPv4 addresses 
 
 ```iptables -nvL PREROUTING -t mangle --line``` will display the PREROUTING Chain statistics or packet information.  This command is very helpful to validate if traffic is traversing the chain.
 
-```ip rule``` will display the rules and priorities for the LAN clients and the fwmark/bitmask created for the WAN interface.
+```ip rule``` will display the rules and priorities for the LAN clients and the fwmark/bitmask created for the WAN and OpenVPN interfaces.
 
 ```service restart_dnsmasq``` will restart dnsmasq. Run this command to restart dnsmasq after making changes to **/jffs/configs/dnsmasq.conf.add**.
 
