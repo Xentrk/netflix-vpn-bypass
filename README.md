@@ -92,7 +92,7 @@ The ```nslookup <domain_name>``` command is useful in looking up IPv4 addresses 
 #### Installation
     /usr/sbin/curl --retry 3 "https://raw.githubusercontent.com/Xentrk/netflix-vpn-bypass/master/getdomainnames.sh" -o /jffs/scripts/getdomainnames.sh && chmod 755 /jffs/scripts/getdomainnames.sh
 
-    /usr/sbin/curl --retry 3 "https://raw.githubusercontent.com/Xentrk/netflix-vpn-bypass/master/IPSET_Netflix_Domains.sh" -o /jffs/scripts/IPSET_Netflix_Domains.sh
+    /usr/sbin/curl --retry 3 "https://raw.githubusercontent.com/Xentrk/netflix-vpn-bypass/master/IPSET_Netflix_Domains.sh" -o /jffs/scripts/IPSET_Netflix_Domains.sh && chmod 755 /jffs/scripts/IPSET_Netflix_Domains.sh
 
 ### Troubleshooting
 ```ipset -L x3mRouting_NETFLIX``` command will list the contents of the IPSET list x3mRouting_NETFLIX
