@@ -38,7 +38,7 @@ This script will:
 
     /usr/sbin/curl --retry 3 "https://raw.githubusercontent.com/Xentrk/netflix-vpn-bypass/master/IPSET_Netflix.sh" -o /jffs/scripts/IPSET_Netflix.sh
 
-If the script runs successfully, you can have the script execute at system start-up by calling it from **/jffs/scripts/nat-start** by including the line ```sh /jffs/scripts/IPSET_Netflix.sh``` in the file.  Make sure **nat-start** has a she-bang as the first line in the file ```#!\bin\sh``` and is executable e.g. ```chmod 755 /jffs/scripts/nat-start```.  
+If the script runs successfully, you can have the script execute at system start-up by calling it from **/jffs/scripts/nat-start** by including the line ```sh /jffs/scripts/IPSET_Netflix.sh``` in the file.  Make sure **nat-start** has a she-bang as the first line in the file ```#!/bin/sh``` and is executable e.g. ```chmod 755 /jffs/scripts/nat-start```.  
 
 ### IPSET_Netflix_Domains.sh
 **IPSET_Netflix_Domains.sh** uses the feature of ipset in dnsmasq to dynamically generate the IPv4 address used by Netflix and Amazon AWS dynamically.  The script will create a cron job that will backup the IPSET list at 2:00 am.  The backup will be used to restore the IPSET list upon system startup.  
