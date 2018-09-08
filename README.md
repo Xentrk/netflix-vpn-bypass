@@ -43,7 +43,9 @@ If the script runs successfully, you can have the script execute at system start
 ### IPSET_Netflix_Domains.sh
 **IPSET_Netflix_Domains.sh** uses the feature of ipset in dnsmasq to dynamically generate the IPv4 address used by Netflix and Amazon AWS dynamically.  The script will create a cron job that will backup the IPSET list at 2:00 am.  The backup will be used to restore the IPSET list upon system startup.  
 
-This approach can be useful when your ISP is using the [Netflix Open Connect Network](https://media.netflix.com/en/company-blog/how-netflix-works-with-isps-around-the-globe-to-deliver-a-great-viewing-experience).  The domain names used may vary by region. As a result, you will have to do some analysis to determine the domain names Netflix is using if the ones included in the script do not work for you.
+This approach can be useful when your ISP is using the [Netflix Open Connect Network](https://media.netflix.com/en/company-blog/how-netflix-works-with-isps-around-the-globe-to-deliver-a-great-viewing-experience).  The domain names used may vary by region. As a result, you will have to do some analysis to determine the domain names Netflix is using if the domains included in the script do not work for you. Below are the list of domain names used in the script. The **x3mRouting_NETFLIX_DNSMASQ** entry is the name of the IPSET list.   
+
+```ipset=/amazonaws.com/akamaiedge.net/netflix.com/nflxext.com/nflximg.net/nflxso.net/nflxvideo.net/x3mRouting_NETFLIX_DNSMASQ```
 
 To determine the domain names, follow the install instructions to download the script **getdomainnames.sh** to **/jffs/scripts/getdomainnames.sh**. Navigate to the dnsmasq log file directory. My dnsmasq.log file location is **/opt/var/log**.   
 
