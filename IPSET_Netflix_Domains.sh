@@ -60,7 +60,7 @@ create_fwmarks () {
 # WAN
     ip rule del fwmark "$FWMARK_WAN" > /dev/null 2>&1
     ip rule add from 0/0 fwmark "$FWMARK_WAN" table 254 prio 9990
-
+    
 #VPN Client 1
     ip rule del fwmark "$FWMARK_OVPNC1" > /dev/null 2>&1
     ip rule add from 0/0 fwmark "$FWMARK_OVPNC1" table 111 prio 9995
@@ -138,12 +138,12 @@ Chk_Entware () {
 # check if /jffs/configs/dnsmasq.conf.add contains entry for Netflix domains
 check_dnsmasq () {
     if [ -s /jffs/configs/dnsmasq.conf.add ]; then  # dnsmasq.conf.add file exists
-        if [ "$(grep -c "ipset=/amazonaws.com/akamaiedge.net/netflix.com/nflxext.com/nflximg.net/nflxso.net/nflxvideo.net/x3mRouting_NETFLIX_DNSMASQ" "/jffs/configs/dnsmasq.conf.add")" -eq "0" ]; then  # see if line exists for x3mRouting_NETFLIX_DNSMASQ
-            printf "ipset=/amazonaws.com/akamaiedge.net/netflix.com/nflxext.com/nflximg.net/nflxso.net/nflxvideo.net/x3mRouting_NETFLIX_DNSMASQ\n" >> /jffs/configs/dnsmasq.conf.add # add NETFLIX entry to dnsmasq.conf.add
+        if [ "$(grep -c "ipset=/amazonaws.com/netflix.com/nflxext.com/nflximg.net/nflxso.net/nflxvideo.net/x3mRouting_NETFLIX_DNSMASQ" "/jffs/configs/dnsmasq.conf.add")" -eq "0" ]; then  # see if line exists for x3mRouting_NETFLIX_DNSMASQ
+            printf "ipset=/amazonaws.com/netflix.com/nflxext.com/nflximg.net/nflxso.net/nflxvideo.net/x3mRouting_NETFLIX_DNSMASQ\n" >> /jffs/configs/dnsmasq.conf.add # add NETFLIX entry to dnsmasq.conf.add
             service restart_dnsmasq > /dev/null 2>&1
         fi
     else
-        printf "ipset=/amazonaws.com/akamaiedge.net/netflix.com/nflxext.com/nflximg.net/nflxso.net/nflxvideo.net/x3mRouting_NETFLIX_DNSMASQ\n" > /jffs/configs/dnsmasq.conf.add # dnsmasq.conf.add does not exist, create dnsmasq.conf.add
+        printf "ipset=/amazonaws.com/netflix.com/nflxext.com/nflximg.net/nflxso.net/nflxvideo.net/x3mRouting_NETFLIX_DNSMASQ\n" > /jffs/configs/dnsmasq.conf.add # dnsmasq.conf.add does not exist, create dnsmasq.conf.add
         service restart_dnsmasq > /dev/null 2>&1
     fi
 }
