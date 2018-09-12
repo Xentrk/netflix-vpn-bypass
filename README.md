@@ -5,6 +5,8 @@ Since January 2016, Netflix blocks known VPN servers. This project was originall
 
 Netflix hosts on Amazon AWS servers. As a result, Amazon AWS domains in the US are also included.
 
+### Overview
+
 There are two selective routing scripts used in this project. Each one uses a different method to collect the IPv4 addresses required for selective routing. Both scripts use the features of [IPSET](http://ipset.netfilter.org/) to collect IPv4 addresses in IPSET lists and match against the IPSET lists.
 
 **IPSET_Netflix.sh** collects the IPv4 addresses used by Netflix from https://ipinfo.io using the Autonomous System Number (ASN) assigned to Netflix. Amazon AWS supplies the list of IPv4 addresses in the json file at https://ip-ranges.amazonaws.com/ip-ranges.json
