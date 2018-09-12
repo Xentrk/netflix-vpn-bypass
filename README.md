@@ -105,5 +105,9 @@ The ```nslookup <domain_name>``` command is useful in looking up IPv4 addresses 
 
 ```service restart_dnsmasq``` will restart dnsmasq. Run this command to restart dnsmasq after making changes to **/jffs/configs/dnsmasq.conf.add**.
 
+
+### Collaboraters
+This project uses the selective routing method espoused by [Martineau](https://www.snbforums.com/members/martineau.13215/) on [snbforums.com](https://www.snbforums.com/forums/). His technical assistance and support helped to make this project possible. [Martineau](https://www.snbforums.com/members/martineau.13215/) provided the **Chk_Entware** function. 
+
 ### Support
 Support for the project is available on [snbforums.com](https://www.snbforums.com/threads/selective-routing-for-netflix.42661/)
