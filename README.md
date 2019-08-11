@@ -1,7 +1,9 @@
+This project has been superceded by [x3mRouting ~ Selective Routing for Asuswrt-Merlin Firmware](https://github.com/Xentrk/x3mRouting). 
+
 # netflix-vpn-bypass
 Selectively route Netflix traffic to the WAN interface, or one of the five OpenVPN clients, on **Asuswrt-Merlin** firmware.  
 
-Since January 2016, Netflix blocks known VPN servers. This project was originally developed to bypass the OpenVPN client for Netflix traffic and route it to the WAN interface. The scripts now provide the ability to route Netflix traffic to an OpenVPN Client if desired. This can be accomplished by editing the $FWMARK parameter in the iptables commands inside the **create_routing_rules** function. If you want a VPN provider who can circumvent the Netflix VPN ban, see my blog post [Why I use Torguard as my VPN Provider](https://x3mtek.com/why-i-use-torguard-as-my-vpn-provider) to learn more. 
+Since January 2016, Netflix blocks known VPN servers. This project was originally developed to bypass the OpenVPN client for Netflix traffic and route it to the WAN interface. The scripts now provide the ability to route Netflix traffic to an OpenVPN Client if desired. This can be accomplished by editing the $FWMARK parameter in the iptables commands inside the **create_routing_rules** function. If you want a VPN provider who can circumvent the Netflix VPN ban, see my blog post [Why I use Torguard as my VPN Provider](https://x3mtek.com/why-i-use-torguard-as-my-vpn-provider) to learn more.
 
 Netflix hosts on Amazon AWS servers. As a result, Amazon AWS domains in the US are also included.
 
@@ -45,7 +47,7 @@ If the script runs successfully, you can have the script execute at system start
 ### IPSET_Netflix_Domains.sh
 **IPSET_Netflix_Domains.sh** uses the feature of ipset in dnsmasq to dynamically generate the IPv4 address used by Netflix and Amazon AWS dynamically.  The script will create a cron job that will backup the IPSET list at 2:00 am.  The backup will be used to restore the IPSET list upon system startup.  
 
-This approach can be useful when your ISP is using the [Netflix Open Connect Network](https://media.netflix.com/en/company-blog/how-netflix-works-with-isps-around-the-globe-to-deliver-a-great-viewing-experience).  The domain names used may vary by region. As a result, you will have to do some analysis to determine the domain names Netflix is using if the domains included in the script do not work for you. Below are the list of domain names used in the script. 
+This approach can be useful when your ISP is using the [Netflix Open Connect Network](https://media.netflix.com/en/company-blog/how-netflix-works-with-isps-around-the-globe-to-deliver-a-great-viewing-experience).  The domain names used may vary by region. As a result, you will have to do some analysis to determine the domain names Netflix is using if the domains included in the script do not work for you. Below are the list of domain names used in the script.
 
     ipset=/amazonaws.com/netflix.com/nflxext.com/nflximg.net/nflxso.net/nflxvideo.net/x3mRouting_NETFLIX_DNSMASQ
 
@@ -108,7 +110,7 @@ The ```nslookup <domain_name>``` command is useful in looking up IPv4 addresses 
 ```service restart_dnsmasq``` will restart dnsmasq. Run this command to restart dnsmasq after making changes to **/jffs/configs/dnsmasq.conf.add**.
 
 ### Collaborators
-This project uses the selective routing method espoused by [Martineau](https://www.snbforums.com/members/martineau.13215/) on [snbforums.com](https://www.snbforums.com/forums/). His technical assistance and support helped to make this project possible. [Martineau](https://www.snbforums.com/members/martineau.13215/) also provided the **Chk_Entware** function. 
+This project uses the selective routing method espoused by [Martineau](https://www.snbforums.com/members/martineau.13215/) on [snbforums.com](https://www.snbforums.com/forums/). His technical assistance and support helped to make this project possible. [Martineau](https://www.snbforums.com/members/martineau.13215/) also provided the **Chk_Entware** function.
 
 ### Support
 Support for the project is available on [snbforums.com](https://www.snbforums.com/threads/selective-routing-for-netflix.42661/)
