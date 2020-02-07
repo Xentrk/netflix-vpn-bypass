@@ -1,4 +1,4 @@
-This project has been superceded by [x3mRouting ~ Selective Routing for Asuswrt-Merlin Firmware](https://github.com/Xentrk/x3mRouting). 
+This project has been superceded by [x3mRouting ~ Selective Routing for Asuswrt-Merlin Firmware](https://github.com/Xentrk/x3mRouting).
 
 # netflix-vpn-bypass
 Selectively route Netflix traffic to the WAN interface, or one of the five OpenVPN clients, on **Asuswrt-Merlin** firmware.  
@@ -53,7 +53,8 @@ This approach can be useful when your ISP is using the [Netflix Open Connect Net
 
 The **x3mRouting_NETFLIX_DNSMASQ** entry is the name of the IPSET list. The script will place the line in **/jffs/configs/dnsmasq.conf.add** if it does not exist.
 
-To determine the domain names, follow the install instructions to download the script **getdomainnames.sh** to **/jffs/scripts/getdomainnames.sh**. Navigate to the dnsmasq log file directory. My dnsmasq.log file location is **/opt/var/log**.   
+#### getdomainnames.sh
+To determine the domain names, follow the installation instructions at the end of this section to download the script **getdomainnames.sh** to **/jffs/scripts**. Navigate to the dnsmasq log file directory. If you have entware installed, the dnsmasq.log file location is **/opt/var/log**.   
 
 Turn off the OpenVPN Client so all of your network traffic will traverse thru the WAN. Navigate to the dnsmasq log file directory **/opt/var/log**. Type the command to start capturing domains used by Netflix:
 
