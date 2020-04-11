@@ -33,13 +33,16 @@ if [ "$1" = "help" ] || [ "$1" = "-h" ]; then
   exit 0
 fi
 
+[ -z "$1" ] && echo "Error! Missing parameter 1" && exit 1
+[ -z "$2" ] && echo "Error! Missing parameter 2" && exit 1
+
 SOURCE_FILE="/opt/var/log/$1"
 IPv4="$2"
 
 A=$(echo "$IPv4" | grep -oE "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$")
 
 if [ -z "$A" ]; then
-  printf '"%s" is not a valid IPv4 address\n' "$IPv4"
+  printf 'Error! "%s" is not a valid IPv4 address\n' "$IPv4"
   exit 1
 fi
 
@@ -48,5 +51,5 @@ if [ -s "$SOURCE_FILE" ]; then
   true >"$OUTPUT_FILE"
   grep "$IPv4" "$SOURCE_FILE" | grep "query" | awk '{ print $6 }' | sort -u >>"$OUTPUT_FILE"
 else
-  echo "error $SOURCE_FILE does not exist"
+  echo "Error! $SOURCE_FILE does not exist"
 fi
