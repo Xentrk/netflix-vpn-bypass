@@ -1,22 +1,52 @@
 #!/bin/sh
-# This script will format the output of tail -f dnsmasq.log > logfile
-# where logfile is the output of tail -f dnsmasq.log
-#  1. extract records whose contents contain the word "query" and the IP address of the
-#     client that is generating the taffic.
-#  2. output only the domain names
-#  3. sort file for unique contents to eliminate duplicates
-#  4. save to $1_domains
+#_______________________________________________________________________________________________________________
+#
+# This script will format the output stored in 'myfile' created using the command: tail -f dnsmasq.log > myfile
+# and save the output to myfile_domains. The file name 'myfile' is an example. You can enter any name.
+#
+# Usage Instructions:
+#  1. Navigate to the log file directory /opt/var/log
+#  2. Enter the command: tail -f dnsmasq.log > myfile
+#  3. Access the streaming service and watch some videos for a few seconds and select each option to generate
+#     domain names.
+#  4. Type 'Ctrl-C' to exit
+#  5. Navigate to /jffs/scripts
+#  6. Run getdomainnames.sh
+#  7. The domains collected will be stored in /opt/var/log/ directory using the same name as the output file
+#     with '_domains' concatenated at the end of the file name (e.g myfile_domains)
 #
 # Parameters Passed
 # $1 = provide the name of the source file when running the script
-#     e.g. ./getdomainnames.sh logfile IPv4_Address
-# $2 = The IP address of the LAN client that generated the query in dnsmasq
-#
-# Uncomment the line below for debugging
-#set -x
+# $2 = IPv4 address of client device that was used to query domains
+# Usage Example:
+#   sh getdomainnames.sh myfile 192.168.1.50
+#_______________________________________________________________________________________________________________
 
-source_file=/opt/var/log/$1
-output_file="${source_file}_domains"
-IP=$2
+# Print between line beginning with '#_' to first blank line inclusive
+ShowHelp() {
+  awk '/^#__/{f=1} f{print; if (!NF) exit}' "$0" | more
+}
 
-egrep -w 'query|"$IP"' "$source_file" | awk '{ print $6 }' | sort -u > "$output_file"
+# Need assistance!???
+if [ "$1" = "help" ] || [ "$1" = "-h" ]; then
+  ShowHelp
+  exit 0
+fi
+
+SOURCE_FILE="/opt/var/log/$1"
+IPv4="$2"
+
+A=$(echo "$IPv4" | grep -oE "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$")
+
+if [ -z "$A" ]; then
+  printf '"%s" is not a valid IPv4 address\n' "$IPv4"
+  exit 1
+fi
+
+if [ -s "$SOURCE_FILE" ]; then
+  OUTPUT_FILE="${SOURCE_FILE}_domains"
+  true >"$OUTPUT_FILE"
+  grep "$IPv4" "$SOURCE_FILE" | grep "query" | awk '{ print $6 }' | sort -u >>"$OUTPUT_FILE"
+else
+  echo "error $SOURCE_FILE does not exist"
+fi
